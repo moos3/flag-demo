@@ -13,7 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	ld "gopkg.in/launchdarkly/go-client.v2"
 )
 
@@ -119,7 +118,9 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var (
 		color string
+		cat   string
 		fFlag = "False"
+		cFlag = "False"
 	)
 
 	if getFeatureFlag("blue-header") {
@@ -131,14 +132,25 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		color = "red"
 	}
 
+	if getFeatureFlag("cats") {
+		cat = "https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif"
+		cFlag = "True"
+	} else {
+		cat = ""
+	}
+
 	type data struct {
-		Color       string
-		FeatureFlag string
+		Color          string
+		Cat            string
+		FeatureFlag    string
+		FeatureCatFlag string
 	}
 
 	sdata := data{
-		Color:       color,
-		FeatureFlag: fFlag,
+		Color:          color,
+		Cat:            cat,
+		FeatureCatFlag: cFlag,
+		FeatureFlag:    fFlag,
 	}
 
 	tmpl, err := template.New("index").Parse(indexHtml)
@@ -147,7 +159,6 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	spew.Dump(sdata)
 	if err := tmpl.Execute(w, sdata); err != nil {
 		fmt.Println(err)
 	}
@@ -236,6 +247,11 @@ var indexHtml = `<!doctype html>
 <div class="card-content white">
     Color is currently {{.Color}}, feature flag is currently {{.FeatureFlag}}
     <br/>
+    {{if .Cat }}
+        <img src='{{ .Cat }}' alt='cat typing' />
+    {{else}}
+    Not showing the killer cat feature, because the flag is currently disabled.
+	{{end}} 
 </div>
 </div>
 </div>
